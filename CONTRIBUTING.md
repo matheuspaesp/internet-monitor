@@ -38,7 +38,14 @@ Obrigado por considerar contribuir para este projeto! Aqui estão algumas diretr
 
 ### Frontend
 
-- Abra o arquivo `frontend/index.html` em um navegador.
+- Certifique-se de que o servidor Flask está em execução:
+  ```bash
+  python server.py
+  ```
+- Abra o navegador e acesse:
+  ```
+  http://127.0.0.1:5000/
+  ```
 - Verifique se as funcionalidades, como exportação de gráficos e download de CSV, estão funcionando corretamente.
 
 ## Reportando problemas
