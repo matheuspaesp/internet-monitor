@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Internet</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .config {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Monitor de Internet</h1>
+
+    <div class="config">
+        <label for="contratado-download">Download Contratado (Mbps):</label>
+        <input type="number" id="contratado-download" value="100">
+
+        <label for="contratado-upload">Upload Contratado (Mbps):</label>
+        <input type="number" id="contratado-upload" value="50">
+
+        <label for="intervalo">Intervalo:</label>
+        <input type="number" id="intervalo" value="5">
+
+        <select id="unidade">
+            <option value="minutos">Minutos</option>
+            <option value="horas">Horas</option>
+        </select>
+
+        <button onclick="configurar()">Configurar</button>
+        <button id="toggle-medicao" onclick="toggleMedicao()">Iniciar Medição</button>
+        <button onclick="exportarJPG()">Exportar Gráfico em JPG</button>
+        <button onclick="baixarCSV()">Baixar CSV Detalhado</button>
+    </div>
+
+    <canvas id="chart" width="400" height="200"></canvas>
+
+    <table id="metrics-table">
+        <thead>
+            <tr>
+                <th>Data e Hora</th>
+                <th>Download (Mbps)</th>
+                <th>Upload (Mbps)</th>
+                <th>Ping (ms)</th>
+                <th>Servidor</th>
+                <th>Localidade</th>
+                <th>Distância (km)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dados serão inseridos aqui -->
+        </tbody>
+    </table>
+
+    <script>
+        let chartInstance = null;
+        let isMeasuring = false;
+
+        async function toggleMedicao() {
+            const button = document.querySelector('#toggle-medicao');
+
+            if (isMeasuring) {
+                await fetch('/pausar', { method: 'POST' });
+                button.textContent = 'Iniciar Medição';
+                isMeasuring = false;
+            } else {
+                await fetch('/iniciar', { method: 'POST' });
+                atualizarDados();
+                button.textContent = 'Pausar Medição';
+                isMeasuring = true;
+            }
+        }
+
+        async function configurar() {
+            const contratadoDownload = document.getElementById('contratado-download').value;
+            const contratadoUpload = document.getElementById('contratado-upload').value;
+            const intervalo = document.getElementById('intervalo').value;
+            const unidade = document.getElementById('unidade').value;
+
+            localStorage.setItem('contratadoDownload', contratadoDownload);
+            localStorage.setItem('contratadoUpload', contratadoUpload);
+            localStorage.setItem('intervalo', intervalo);
+            localStorage.setItem('unidade', unidade);
+
+            await fetch('/configurar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contratado_download: contratadoDownload, contratado_upload: contratadoUpload, intervalo, unidade })
+            });
+
+            const intervaloMs = intervalo * (unidade === 'minutos' ? 60000 : 3600000);
+            clearInterval(poolingInterval);
+            poolingInterval = setInterval(atualizarDados, intervaloMs);
+        }
+
+        function carregarConfiguracoes() {
+            const contratadoDownload = localStorage.getItem('contratadoDownload') || 100;
+            const contratadoUpload = localStorage.getItem('contratadoUpload') || 50;
+            const intervalo = localStorage.getItem('intervalo') || 5;
+            const unidade = localStorage.getItem('unidade') || 'minutos';
+
+            document.getElementById('contratado-download').value = contratadoDownload;
+            document.getElementById('contratado-upload').value = contratadoUpload;
+            document.getElementById('intervalo').value = intervalo;
+            document.getElementById('unidade').value = unidade;
+        }
+
+        carregarConfiguracoes();
+
+        async function atualizarDados() {
+            const response = await fetch('/dados');
+            const data = await response.json();
+            const rows = data.dados.slice(1).filter(row => row);
+
+            const tableBody = document.querySelector('#metrics-table tbody');
+            tableBody.innerHTML = '';
+
+            const labels = [];
+            const downloadData = [];
+            const uploadData = [];
+
+            rows.forEach(row => {
+                const columns = row.split(',');
+                const [timestamp, download, upload, ping, server, location, distance] = columns;
+
+                labels.push(timestamp || 'N/A');
+                downloadData.push(parseFloat(download) || 0);
+                uploadData.push(parseFloat(upload) || 0);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${timestamp || 'N/A'}</td>
+                    <td>${download || 'N/A'}</td>
+                    <td>${upload || 'N/A'}</td>
+                    <td>${ping || 'N/A'}</td>
+                    <td>${server || 'N/A'}</td>
+                    <td>${location || 'N/A'}</td>
+                    <td>${distance || 'N/A'}</td>
+                `;
+
+                tableBody.appendChild(tr);
+            });
+
+            const contratadoDownload = parseFloat(document.getElementById('contratado-download').value) || 0;
+            const contratadoUpload = parseFloat(document.getElementById('contratado-upload').value) || 0;
+
+            if (!chartInstance) {
+                const ctx = document.getElementById('chart').getContext('2d');
+                chartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Download (Mbps)',
+                                data: downloadData,
+                                borderColor: 'blue',
+                                fill: false
+                            },
+                            {
+                                label: 'Upload (Mbps)',
+                                data: uploadData,
+                                borderColor: 'green',
+                                fill: false
+                            },
+                            {
+                                label: 'Download Contratado (Mbps)',
+                                data: Array(labels.length).fill(contratadoDownload),
+                                borderColor: 'red',
+                                borderDash: [5, 5],
+                                fill: false
+                            },
+                            {
+                                label: 'Upload Contratado (Mbps)',
+                                data: Array(labels.length).fill(contratadoUpload),
+                                borderColor: 'orange',
+                                borderDash: [5, 5],
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                suggestedMax: contratadoDownload * 1.2
+                            }
+                        }
+                    }
+                });
+            } else {
+                chartInstance.data.labels = labels;
+                chartInstance.data.datasets[0].data = downloadData;
+                chartInstance.data.datasets[1].data = uploadData;
+                chartInstance.data.datasets[2].data = Array(labels.length).fill(contratadoDownload);
+                chartInstance.data.datasets[3].data = Array(labels.length).fill(contratadoUpload);
+                chartInstance.options.scales.y.suggestedMax = contratadoDownload * 1.2;
+                chartInstance.update();
+            }
+        }
+
+        let poolingInterval = setInterval(atualizarDados, 5000);
+
+        function exportarJPG() {
+            const canvas = document.getElementById('chart');
+            const imgData = canvas.toDataURL('image/jpeg');
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = imgData;
+            a.download = 'grafico_internet.jpg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        async function baixarCSV() {
+            const response = await fetch('/download_csv');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'dados_velocidade.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
