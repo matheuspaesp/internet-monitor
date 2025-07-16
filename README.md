@@ -11,6 +11,13 @@ Este projeto tem como objetivo monitorar a estabilidade e entrega da internet, r
 - Download do histórico detalhado em CSV.
 - Opção para apagar o histórico completo.
 
+Gráfico de acompanhamento das medições:
+<img width="1818" height="925" alt="image" src="https://github.com/user-attachments/assets/64d33023-9da3-4241-953a-2cf67f942174" />
+
+Medições detalhadas:
+<img width="1887" height="678" alt="image" src="https://github.com/user-attachments/assets/c0625528-70fa-47fb-8084-ea47eef0f218" />
+
+
 ## Como usar
 
 1. Clone este repositório:
