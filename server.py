@@ -37,6 +37,12 @@ def pausar():
     medicao_ativa = False
     return jsonify({"status": "medição pausada"})
 
+@app.route('/sair', methods=['POST'])
+def sair():
+    global medicao_ativa
+    medicao_ativa = False
+    return jsonify({"status": "medição pausada ao sair da página"})
+
 @app.route('/dados', methods=['GET'])
 def obter_dados():
     with open(ARQUIVO_SAIDA, 'r') as arquivo:
@@ -86,6 +92,8 @@ def monitorar_internet():
     while medicao_ativa:
         agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
+            if not medicao_ativa:
+                break
             download, upload, ping, nome, local, dist = medir_velocidade()
             salvar_dados(agora, download, upload, ping, nome, local, dist)
         except Exception as e:

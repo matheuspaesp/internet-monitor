@@ -242,6 +242,10 @@
             a.click();
             window.URL.revokeObjectURL(url);
         }
+
+        window.onbeforeunload = async function () {
+            await fetch('/sair', { method: 'POST' });
+        };
     </script>
 </body>
 </html>
