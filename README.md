@@ -27,7 +27,7 @@ Medições detalhadas:
 
 2. Instale as dependências:
    ```bash
-   pip install flask speedtest-cli
+   pip install -r requirements.txt
    ```
 
 3. Execute o servidor Flask:
