@@ -7,68 +7,221 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
         }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2196F3;
+            margin: 0 0 30px 0;
+            font-size: 2em;
+            font-weight: 500;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .input-group input,
+        .input-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: #2196F3;
+            outline: none;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        button.primary {
+            background-color: #2196F3;
+            color: white;
+        }
+
+        button.secondary {
+            background-color: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button.primary:hover {
+            background-color: #1976D2;
+        }
+
+        button.secondary:hover {
+            background-color: #e9ecef;
+        }
+
+        .content {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
         }
+
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px 15px;
             text-align: center;
+            border: 1px solid #efefef;
         }
+
         th {
-            background-color: #f4f4f4;
+            background-color: #f8f9fa;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
         }
-        .config {
-            margin-bottom: 20px;
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
         }
     </style>
 </head>
 <body>
-    <h1>Monitor de Internet</h1>
+    <div class="header">
+        <div class="container">
+            <h1>Monitor de Internet</h1>
+            
+            <div class="config-grid">
+                <div class="input-group">
+                    <label for="contratado-download">Download Contratado (Mbps)</label>
+                    <input type="number" id="contratado-download" value="100">
+                </div>
 
-    <div class="config">
-        <label for="contratado-download">Download Contratado (Mbps):</label>
-        <input type="number" id="contratado-download" value="100">
+                <div class="input-group">
+                    <label for="contratado-upload">Upload Contratado (Mbps)</label>
+                    <input type="number" id="contratado-upload" value="50">
+                </div>
 
-        <label for="contratado-upload">Upload Contratado (Mbps):</label>
-        <input type="number" id="contratado-upload" value="50">
+                <div class="input-group">
+                    <label for="intervalo">Intervalo</label>
+                    <input type="number" id="intervalo" value="5">
+                </div>
 
-        <label for="intervalo">Intervalo:</label>
-        <input type="number" id="intervalo" value="5">
+                <div class="input-group">
+                    <label for="unidade">Unidade</label>
+                    <select id="unidade">
+                        <option value="minutos">Minutos</option>
+                        <option value="horas">Horas</option>
+                    </select>
+                </div>
 
-        <select id="unidade">
-            <option value="minutos">Minutos</option>
-            <option value="horas">Horas</option>
-        </select>
+                <div class="input-group">
+                    <label for="metodo">Método de Teste</label>
+                    <select id="metodo">
+                        <option value="local">Servidor Local (50-60km)</option>
+                        <option value="rapido">Servidor Mais Rápido</option>
+                    </select>
+                </div>
+            </div>
 
-        <button onclick="configurar()">Configurar</button>
-        <button id="toggle-medicao" onclick="toggleMedicao()">Iniciar Medição</button>
-        <button onclick="exportarJPG()">Exportar Gráfico em JPG</button>
-        <button onclick="baixarCSV()">Baixar CSV Detalhado</button>
+            <div class="button-group">
+                <button class="primary" onclick="configurar()">Configurar</button>
+                <button class="primary" id="toggle-medicao" onclick="toggleMedicao()">Iniciar Medição</button>
+                <button class="secondary" onclick="exportarJPG()">Exportar Gráfico</button>
+                <button class="secondary" onclick="baixarCSV()">Baixar CSV</button>
+            </div>
+        </div>
     </div>
 
-    <canvas id="chart" width="400" height="200"></canvas>
+    <div class="container">
+        <div class="content">
+            <canvas id="chart" width="400" height="200"></canvas>
+        </div>
 
-    <table id="metrics-table">
-        <thead>
-            <tr>
-                <th>Data e Hora</th>
-                <th>Download (Mbps)</th>
-                <th>Upload (Mbps)</th>
-                <th>Ping (ms)</th>
-                <th>Servidor</th>
-                <th>Localidade</th>
-                <th>Distância (km)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Dados serão inseridos aqui -->
-        </tbody>
-    </table>
+        <div class="content">
+            <table id="metrics-table">
+                <thead>
+                    <tr>
+                        <th>Data e Hora</th>
+                        <th>Download (Mbps)</th>
+                        <th>Upload (Mbps)</th>
+                        <th>Ping (ms)</th>
+                        <th>Servidor</th>
+                        <th>Localidade</th>
+                        <th>Distância (km)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
         let chartInstance = null;
@@ -95,10 +248,13 @@
             const intervalo = document.getElementById('intervalo').value;
             const unidade = document.getElementById('unidade').value;
 
+            const metodo = document.getElementById('metodo').value;
+            
             localStorage.setItem('contratadoDownload', contratadoDownload);
             localStorage.setItem('contratadoUpload', contratadoUpload);
             localStorage.setItem('intervalo', intervalo);
             localStorage.setItem('unidade', unidade);
+            localStorage.setItem('metodo', metodo);
 
             await fetch('/configurar', {
                 method: 'POST',
@@ -246,6 +402,18 @@
         window.onbeforeunload = async function () {
             await fetch('/sair', { method: 'POST' });
         };
+
+        async function medirVelocidade() {
+            const metodo = document.getElementById('metodo-teste').value;
+
+            const response = await fetch('/medir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ metodo })
+            });
+
+            const data = await response.json();
+        }
     </script>
 </body>
 </html>

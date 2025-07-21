@@ -8,6 +8,7 @@ import speedtest
 app = Flask(__name__)
 
 ARQUIVO_SAIDA = "dados_velocidade.csv"
+METODO_MEDICAO = "local"
 medicao_ativa = False
 intervalo_segundos = 300
 contratado_download = 100
@@ -15,12 +16,13 @@ contratado_upload = 50
 
 @app.route('/configurar', methods=['POST'])
 def configurar():
-    global contratado_download, contratado_upload, intervalo_segundos
+    global contratado_download, contratado_upload, intervalo_segundos, METODO_MEDICAO
     dados = request.json
     contratado_download = dados.get('contratado_download', contratado_download)
     contratado_upload = dados.get('contratado_upload', contratado_upload)
-    intervalo = dados.get('intervalo', 5)
+    intervalo = int(dados.get('intervalo', 5))
     unidade = dados.get('unidade', 'minutos')
+    METODO_MEDICAO = dados.get('metodo', 'speedtest')
     intervalo_segundos = intervalo * (60 if unidade == 'minutos' else 3600)
     return jsonify({"status": "configurado"})
 
@@ -64,7 +66,29 @@ def apagar_historico():
         arquivo.write('')
     return jsonify({"status": "histórico apagado"})
 
-def medir_velocidade():
+def medir_velocidade_local():
+    st = speedtest.Speedtest()
+    st.get_servers()
+    servidores = st.get_closest_servers()
+
+    servidores_proximos = [s for s in servidores if 50 <= s['d'] <= 60]
+
+    if servidores_proximos:
+        servidor = servidores_proximos[0]
+    else:
+        servidor = st.get_best_server()
+
+    download = round(st.download() / 1_000_000, 2)
+    upload = round(st.upload() / 1_000_000, 2)
+    ping = round(servidor['latency'], 2)
+
+    servidor_nome = servidor['sponsor']
+    servidor_local = servidor['name']
+    servidor_dist = round(servidor['d'], 2)
+
+    return download, upload, ping, servidor_nome, servidor_local, servidor_dist
+
+def medir_velocidade_rapido():
     st = speedtest.Speedtest()
     st.get_servers()
     servidor = st.get_best_server()
@@ -78,6 +102,13 @@ def medir_velocidade():
     servidor_dist = round(servidor['d'], 2)
 
     return download, upload, ping, servidor_nome, servidor_local, servidor_dist
+
+def medir_velocidade():
+    if METODO_MEDICAO == 'rapido':
+        return medir_velocidade_rapido()
+    return medir_velocidade_local()
+
+
 
 def salvar_dados(timestamp, download, upload, ping, nome, local, dist):
     nome = nome or 'N/A'
@@ -99,6 +130,8 @@ def monitorar_internet():
         except Exception as e:
             print(f"Erro ao medir: {e}")
         time.sleep(intervalo_segundos)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
