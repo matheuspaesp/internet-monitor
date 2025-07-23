@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 import csv
 import speedtest
+import os
 
 app = Flask(__name__)
 
@@ -134,4 +135,5 @@ def monitorar_internet():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    host = os.environ.get('FLASK_RUN_HOST', '127.0.0.1')
+    app.run(host=host, debug=True)
